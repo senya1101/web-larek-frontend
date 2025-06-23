@@ -8,6 +8,7 @@
   background-color: $primary;
   color: white;
   padding: $defaultPadding;
+  align-items: flex-start;
 
   &_full {
     flex-direction: row;
@@ -44,6 +45,7 @@
     height: 390px;
     aspect-ratio: 1;
     margin: 3.75rem;
+    align-self: center;
   }
   &__title {
     font-size: $titleFontSize;

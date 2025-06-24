@@ -30,6 +30,7 @@
 - 'addressPayment:changed' 
 - 'contacts:open' 
 - 'contacts:changed'
+- 'order:send'
 - 'success:open' 
 - 'success:close'
 - 'products:changed' 
@@ -101,7 +102,7 @@ type ApiPostMethods = 'POST' | 'PUT' | 'DELETE'
 ```
 #### Конструктор
 
-```typescript
+```
 constructor(baseUrl: string, options: RequestInit = {})
 ```
 - `baseUrl` - базовый URL API
@@ -216,19 +217,16 @@ export interface AppState {
 	products: Product[];
 	selectedProduct: Product;
 	basket: Product[];
-	openedModal: AppStateModals | null;
 	selectedPayment: PaymentType;
 	address: string;
 	contacts: Contacts;
 	basketTotal: number;
 	storageKey: string;
 	selectProduct(id: string): void;
-	loadProducts(): void;
 	addToBasket(id: string): void;
 	clearBasket(): void;
 	removeFromBasket(id: string): void;
 	getOrder(): Order;
-	orderProducts(): void;
 	setContacts(contacts: Contacts): void;
 	setPaymentAddress(payment: PaymentType, address: string): void;
 	validateData(contacts: Contacts): FormErrors
@@ -238,7 +236,6 @@ export interface AppState {
 - `products: Product[]` - список загруженных товаров
 - `selectedProduct: Product` - продукт, открытый в модальном окне 
 - `basket: Product[]` - корзина
-- `openedModal: AppStateModals | null` - текущее открытое модальное окно
 - `selectedPayment: PaymentType` - тип оплаты заказа
 - `address: string` - адрес доставки заказа
 - `contacts: Contacts` - контактная информация
@@ -248,12 +245,10 @@ export interface AppState {
 ### Основные методы
 | Метод                  | Описание                                  |
 |------------------------|------------------------------------------|
-| `loadProducts()`       | Загружает товары через API               |
 | `addToBasket()`        | Добавляет товар в корзину                |
 | `removeFromBasket()`   | Удаляет товар из корзины                 |
 | `clearBasket()`        | Очищает корзину                          |
 | `getOrder()`           | Формирует объект заказа                  |
-| `orderProducts()`      | Отправляет заказ на сервер               |
 | `validateData()`       | Проверяет валидность email и телефона    |
 
 ## View

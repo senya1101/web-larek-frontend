@@ -1,4 +1,4 @@
-import { cloneTemplate } from '../../utils/utils';
+import { cloneTemplate, ensureElement } from '../../utils/utils';
 import { settings } from '../../utils/constants';
 import { IEvents } from '../base/events';
 import { AppStateChanges } from '../model/AppStateModel';
@@ -22,16 +22,16 @@ export class BasketView implements IBasket {
 
 	constructor({template, events, count, total}:{template: HTMLTemplateElement, events: IEvents, count: number, total:number}) {
 		this.basket = cloneTemplate(template);
-		this.basketTotal = this.basket.querySelector(settings.basketSettings.total);
-		this.basketList = this.basket.querySelector(settings.basketSettings.list);
-		this.basketHeaderButton = document.querySelector(settings.basketSettings.headerButton);
-		this.basketHeaderCount = document.querySelector(settings.basketSettings.headerCount);
+		this.basketTotal = ensureElement(settings.basketSettings.total, this.basket);
+		this.basketList = ensureElement(settings.basketSettings.list, this.basket);
+		this.basketHeaderButton = ensureElement(settings.basketSettings.headerButton) as HTMLButtonElement;
+		this.basketHeaderCount = ensureElement(settings.basketSettings.headerCount);
 
 		this.basketHeaderButton.addEventListener('click', () => {
 			events.emit(AppStateChanges['basket:open']);
 		});
 
-		this.basketOrderButton = this.basket.querySelector(settings.basketSettings.orderButton);
+		this.basketOrderButton = ensureElement(settings.basketSettings.orderButton, this.basket) as HTMLButtonElement
 		this.basketOrderButton.addEventListener('click', () => {
 			events.emit(AppStateChanges['addressPayment:open']);
 		});

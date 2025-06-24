@@ -1,4 +1,4 @@
-import { cloneTemplate } from '../../utils/utils';
+import { cloneTemplate, ensureElement } from '../../utils/utils';
 import { settings } from '../../utils/constants';
 import { IEvents } from '../base/events';
 import { AppStateChanges } from '../model/AppStateModel';
@@ -16,10 +16,10 @@ export class ContactsView implements IContact {
 
 	constructor(template: HTMLTemplateElement, events: IEvents) {
 		this.ContactsForm = cloneTemplate(template);
-		this.PhoneInput = this.ContactsForm.querySelector(settings.contactsSettings.phone);
-		this.EmailInput = this.ContactsForm.querySelector(settings.contactsSettings.email);
-		this.nextButton = this.ContactsForm.querySelector(settings.formSettings.submitButton);
-		this.errorMessage = this.ContactsForm.querySelector(settings.formSettings.formError);
+		this.PhoneInput = ensureElement(settings.contactsSettings.phone, this.ContactsForm) as HTMLInputElement;
+		this.EmailInput = ensureElement(settings.contactsSettings.email, this.ContactsForm)as HTMLInputElement;
+		this.nextButton = ensureElement(settings.formSettings.submitButton, this.ContactsForm) as HTMLButtonElement;
+		this.errorMessage = ensureElement(settings.formSettings.formError, this.ContactsForm);
 		[this.EmailInput, this.PhoneInput].forEach(cur => cur.addEventListener('change', () => {
 			events.emit(AppStateChanges['contacts:changed'], {
 				email: this.EmailInput.value,
@@ -28,7 +28,7 @@ export class ContactsView implements IContact {
 		}));
 		this.ContactsForm.addEventListener('submit', (e)=>{
 			e.preventDefault();
-			events.emit(AppStateChanges['success:open'], {})
+			events.emit(AppStateChanges['order:send'], {})
 		})
 	}
 
@@ -44,3 +44,5 @@ export class ContactsView implements IContact {
 		return this.ContactsForm
 	}
 }
+
+

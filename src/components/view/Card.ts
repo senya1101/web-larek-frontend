@@ -1,5 +1,5 @@
 import { ICategories, Product } from '../../types';
-import { cloneTemplate } from '../../utils/utils';
+import { cloneTemplate, ensureElement } from '../../utils/utils';
 import { settings } from '../../utils/constants';
 import { IEvents } from '../base/events';
 import { AppStateChanges } from '../model/AppStateModel';
@@ -37,38 +37,28 @@ export class CardView implements ICardView {
 		events: IEvents;
 	}) {
 		this.card = cloneTemplate(template);
-		this.cardTitle = this.card.querySelector(settings.cardSettings.title);
-		this.cardImage = this.card.querySelector(settings.cardSettings.image);
-		this.cardPrice = this.card.querySelector(settings.cardSettings.price);
-		this.cardCategory = this.card.querySelector(settings.cardSettings.category);
+		this.cardTitle = ensureElement(settings.cardSettings.title, this.card);
+		this.cardImage = ensureElement(settings.cardSettings.image, this.card) as HTMLImageElement;
+		this.cardPrice = ensureElement(settings.cardSettings.price, this.card);
+		this.cardCategory = ensureElement(settings.cardSettings.category, this.card);
 		this.category = data.category;
 		this.title = data.title;
 		this.image = data.image;
 		this.price = settings.formatPrice(data.price);
 		if (isPreview) {
-			this.cardDescription = this.card.querySelector(
-				settings.cardSettings.text
+			this.cardDescription = ensureElement(
+				settings.cardSettings.text, this.card
 			);
 			this.description = data.description;
-			this.cardOrderButton = this.card.querySelector(
-				settings.cardSettings.action
-			);
+			this.cardOrderButton = ensureElement(
+				settings.cardSettings.action, this.card
+			) as HTMLButtonElement
 			if (inBasket) {
 				this.cardOrderButton.textContent = 'Убрать из корзины';
-				this.cardOrderButton.addEventListener('click', () => {
-					events.emit(AppStateChanges['product:removeFromBasket'], {
-						product: data,
-					});
-					this.cardOrderButton.textContent = 'В корзину';
-
-				});
+				this.cardOrderButton.onclick = this.removeFromBasketHandler.bind(this, events, data);
 			} else {
 				this.cardOrderButton.textContent = 'В корзину';
-				this.cardOrderButton.addEventListener('click', () => {
-					events.emit(AppStateChanges['product:addedToBasket']);
-					this.cardOrderButton.textContent = 'Убрать из корзины';
-
-				});
+				this.cardOrderButton.onclick = this.addToBasketHandler.bind(this, events, data);
 			}
 		} else {
 			this.card.addEventListener('click', () => {
@@ -77,6 +67,21 @@ export class CardView implements ICardView {
 				});
 			});
 		}
+
+	}
+
+	protected addToBasketHandler(events: IEvents, data: Product) {
+		events.emit(AppStateChanges['product:addedToBasket'], {});
+		this.cardOrderButton.textContent = 'Убрать из корзины';
+		this.cardOrderButton.onclick = this.removeFromBasketHandler.bind(this, events, data);
+	}
+
+	protected removeFromBasketHandler(events: IEvents, data:Product) {
+		events.emit(AppStateChanges['product:removeFromBasket'], {
+			product: data,
+		});
+		this.cardOrderButton.textContent = 'В корзину';
+		this.cardOrderButton.onclick = this.addToBasketHandler.bind(this, events, data);
 	}
 
 	set title(title: string) {

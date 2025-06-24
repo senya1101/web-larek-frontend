@@ -1,5 +1,5 @@
 import { Product } from '../../types';
-import { cloneTemplate } from '../../utils/utils';
+import { cloneTemplate, ensureElement } from '../../utils/utils';
 import { settings } from '../../utils/constants';
 import { IEvents } from '../base/events';
 import { AppStateChanges } from '../model/AppStateModel';
@@ -18,11 +18,11 @@ export class BasketItemView implements IBasketItem {
 
 	constructor(template: HTMLTemplateElement, events: IEvents , data: Partial<Product>,index: number) {
 		this.basketItem = cloneTemplate(template);
-		this.basketItemTitle = this.basketItem.querySelector(settings.basketItemSettings.title);
-		this.basketItemPrice = this.basketItem.querySelector(settings.basketItemSettings.price);
-		this.basketItemIndex = this.basketItem.querySelector(settings.basketItemSettings.index);
+		this.basketItemTitle = ensureElement(settings.basketItemSettings.title, this.basketItem);
+		this.basketItemPrice = ensureElement(settings.basketItemSettings.price, this.basketItem);
+		this.basketItemIndex = ensureElement(settings.basketItemSettings.index, this.basketItem);
 
-		const deleteButton = this.basketItem.querySelector(settings.basketItemSettings.delete)
+		const deleteButton = ensureElement(settings.basketItemSettings.delete, this.basketItem)
 		if (deleteButton instanceof HTMLButtonElement) {
 			this.basketItemDeleteButton = deleteButton;
 			this.basketItemDeleteButton.addEventListener('click', ()=>{

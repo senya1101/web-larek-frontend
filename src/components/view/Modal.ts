@@ -1,4 +1,5 @@
 import { settings } from '../../utils/constants';
+import { ensureElement } from '../../utils/utils';
 
 
 interface IModal {
@@ -18,8 +19,8 @@ export class ModalView implements IModal {
 
 	constructor(page: HTMLElement, container: HTMLElement, content?: HTMLElement) {
 		this.containerModal = container;
-		this.contentElem = this.containerModal.querySelector(settings.modalSettings.content);
-		this.container = this.containerModal.querySelector(settings.modalSettings.container);
+		this.contentElem = ensureElement(settings.modalSettings.content, this.containerModal);
+		this.container = ensureElement(settings.modalSettings.container, this.containerModal);
 		this.page = page;
 		this.closeButton = this.getCloseButton();
 		this.closeButton.addEventListener('click', ()=>{
@@ -33,7 +34,7 @@ export class ModalView implements IModal {
 	}
 
 	protected getCloseButton() {
-		const closeButton = this.container.querySelector(settings.modalSettings.close);
+		const closeButton = ensureElement(settings.modalSettings.close, this.container);
 		if (closeButton && closeButton instanceof HTMLButtonElement) {
 			return closeButton;
 		} else

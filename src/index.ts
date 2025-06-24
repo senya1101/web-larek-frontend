@@ -4,7 +4,6 @@ import { API_URL, CDN_URL, settings } from './utils/constants';
 import { EventEmitter, IEvents } from './components/base/events';
 import {
 	AppStateChanges,
-	AppStateModals,
 	AppStateModel,
 } from './components/model/AppStateModel';
 import { BasketView } from './components/view/Basket';
@@ -14,40 +13,41 @@ import { ContactsView } from './components/view/Contacts';
 import { SuccessView } from './components/view/Success';
 import { CardView } from './components/view/Card';
 import { Contacts, FormErrors, PaymentType, Product } from './types';
-
+import { BasketItemView } from './components/view/BasketItem';
+import {ensureElement} from './utils/utils'
 
 const storageKey = 'basket';
 const api = new ProductsApi(API_URL, CDN_URL);
 const events: IEvents = new EventEmitter();
 const appState = new AppStateModel(api, events, storageKey);
 
-const pageWrapper = document.querySelector(settings.page) as HTMLElement;
-const gallery = document.querySelector(settings.gallery) as HTMLElement;
+const pageWrapper = ensureElement(settings.page) as HTMLElement;
+const gallery = ensureElement(settings.gallery) as HTMLElement;
 
-const cardCatalogTemplate = document.querySelector(
+const cardCatalogTemplate = ensureElement(
 	settings.cardCatalogTemplate
 ) as HTMLTemplateElement;
-const cardPreviewTemplate = document.querySelector(
+const cardPreviewTemplate = ensureElement(
 	settings.cardPreviewTemplate
 ) as HTMLTemplateElement;
-const basketItemTemplate = document.querySelector(
+const basketItemTemplate = ensureElement(
 	settings.cardBasketTemplate
 ) as HTMLTemplateElement;
-const basketTemplate = document.querySelector(
+const basketTemplate = ensureElement(
 	settings.basketTemplate
 ) as HTMLTemplateElement;
 
-const orderTemplate = document.querySelector(
+const orderTemplate = ensureElement(
 	settings.orderTemplate
 ) as HTMLTemplateElement;
-const contactsTemplate = document.querySelector(
+const contactsTemplate = ensureElement(
 	settings.contactsTemplate
 ) as HTMLTemplateElement;
-const successTemplate = document.querySelector(
+const successTemplate = ensureElement(
 	settings.successTemplate
 ) as HTMLTemplateElement;
 
-const modal = document.querySelector(settings.modalSelector) as HTMLElement;
+const modal = ensureElement(settings.modalSelector) as HTMLElement;
 const modalView = new ModalView(pageWrapper, modal);
 const basketView = new BasketView({
 	template: basketTemplate,
@@ -74,8 +74,8 @@ events.on(AppStateChanges['products:changed'], () => {
 
 events.on(
 	AppStateChanges['product:selected'],
-	async (data: { product: Product }) => {
-		await appState.selectProduct(data.product.id);
+	(data: { product: Product }) => {
+		appState.selectProduct(data.product);
 		const inBasket = appState.basket.some((x) => x.id === data.product.id);
 		const cardPreview = new CardView({
 			template: cardPreviewTemplate,
@@ -85,7 +85,6 @@ events.on(
 			events: events,
 		});
 		modalView.content = cardPreview.render();
-		appState.openedModal = AppStateModals.product;
 		modalView.open();
 	}
 );
@@ -94,12 +93,10 @@ events.on(AppStateChanges['product:addedToBasket'], () => {
 	appState.addToBasket();
 	basketView.count = appState.basket.length;
 	basketView.total = appState.basketTotal;
-	appState.openedModal = AppStateModals.none;
 	modalView.close();
 });
 
 events.on(AppStateChanges['basket:open'], () => {
-	appState.openedModal = AppStateModals.basket;
 	basketView.updateContent(
 		appState.basket,
 		events,
@@ -114,21 +111,10 @@ events.on(
 	AppStateChanges['product:removeFromBasket'],
 	(data: { product: Product }) => {
 		appState.removeFromBasket(data.product.id);
-		basketView.updateContent(
-			appState.basket,
-			events,
-			basketItemTemplate,
-			appState.basketTotal
-		);
-		console.log(appState.openedModal === AppStateModals.basket)
-		if (appState.openedModal === AppStateModals.basket)
-			modalView.content = basketView.render();
-		else modalView.close();
 	}
 );
 
 events.on(AppStateChanges['contacts:open'], () => {
-	appState.openedModal = AppStateModals.contacts;
 	modalView.content = contactsView.render();
 });
 
@@ -144,7 +130,6 @@ events.on(AppStateChanges['contacts:changed'], (data: Contacts) => {
 
 
 events.on(AppStateChanges['addressPayment:open'], ()=>{
-	appState.openedModal = AppStateModals.addressPayment;
 	modalView.content = orderView.render();
 })
 
@@ -158,23 +143,44 @@ events.on(AppStateChanges['addressPayment:changed'], (data:{
 	else orderView.errorMessage=''
 })
 
-events.on(AppStateChanges['success:open'], ()=>{
-	appState.openedModal = AppStateModals.success;
-	successView.total = appState.basketTotal
-	appState.orderProducts().then(()=>{
+
+events.on(AppStateChanges['order:send'], ()=>{
+	api.orderProducts(appState.getOrder()).catch(e=>console.error(e)).then(()=>{
+		events.emit(AppStateChanges['success:open'], {total:appState.basketTotal});
 		appState.clearBasket()
-		basketView.updateContent(
-			appState.basket,
-			events,
-			basketItemTemplate,
-			appState.basketTotal
-		);
-		modalView.content = successView.render();
-	})
+	});
+})
+
+
+events.on(AppStateChanges['success:open'], (data:{total:number})=>{
+	successView.total = data.total
+	modalView.content = successView.render();
 })
 
 events.on(AppStateChanges['success:close'], ()=>{
 	modalView.close()
 })
 
-appState.loadProducts().catch(e=>console.error(e));
+events.on(AppStateChanges['basket:change'], ()=>{
+	if (appState.basket.length !== 0) {
+		basketView.content = appState.basket.map((product, i) => {
+			const item = new BasketItemView(
+				basketItemTemplate,
+				events,
+				product,
+				i + 1
+			);
+			return item.render();
+		});
+		basketView.isDisabled=false
+	} else {
+		basketView.content = []
+		basketView.isDisabled  = true
+	}
+	basketView.count = appState.basket.length;
+	basketView.total = appState.basketTotal
+})
+
+api.getProducts().catch(e=>console.error(e)).then((data: Product[])=>{
+	appState._products = data
+})

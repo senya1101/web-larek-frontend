@@ -1,5 +1,5 @@
 import { PaymentType } from '../../types';
-import { cloneTemplate } from '../../utils/utils';
+import { cloneTemplate, ensureElement, ensureAllElements } from '../../utils/utils';
 import { settings } from '../../utils/constants';
 import { IEvents } from '../base/events';
 import { AppStateChanges } from '../model/AppStateModel';
@@ -24,15 +24,15 @@ export class OrderView implements IOrder {
 		if (form instanceof HTMLFormElement) this.paymentAddressForm = form;
 		else throw new Error('Unable to render Payment Address');
 
-		this.nextButton = this.paymentAddressForm.querySelector(
-			settings.formSettings.submitButton
-		);
+		this.nextButton = ensureElement(
+			settings.formSettings.submitButton, this.paymentAddressForm
+		) as HTMLButtonElement;
 
-		this.addressInput = this.paymentAddressForm.querySelector(
-			settings.orderSettings.address
-		);
+		this.addressInput = ensureElement(
+			settings.orderSettings.address, this.paymentAddressForm
+		) as HTMLInputElement;
 		this.paymentButtons = Array.from(
-			this.paymentAddressForm.querySelectorAll(settings.orderSettings.buttons)
+			ensureAllElements(settings.orderSettings.buttons, this.paymentAddressForm)
 		);
 		this.paymentButtons.forEach((cur) =>
 			cur.addEventListener('click', () => {
@@ -51,8 +51,8 @@ export class OrderView implements IOrder {
 			settings.orderSettings.activeButtonClass
 		);
 
-		this.formError = this.paymentAddressForm.querySelector(
-			settings.formSettings.formError
+		this.formError = ensureElement(
+			settings.formSettings.formError, this.paymentAddressForm
 		);
 
 		this.addressInput.addEventListener('change', () => {

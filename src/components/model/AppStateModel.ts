@@ -13,38 +13,28 @@ export enum AppStateChanges {
 	'product:addedToBasket' = 'productAddedToBasket',
 	'product:removeFromBasket' = 'productRemoveFromBasket',
 	'basket:open' = 'basketOpen',
+	'basket:change' = 'basketChange',
 	'addressPayment:open' = 'addressPaymentOpen',
 	'addressPayment:changed' = 'addressPaymentChanged',
 	'contacts:open' = 'contactsOpen',
 	'contacts:changed' = 'emailChanged',
+	'order:send' = 'orderSend',
 	'success:open' = 'successOpen',
 	'success:close' = 'successClose',
 	'products:changed' = 'productsChanged',
-}
-
-export enum AppStateModals {
-	product,
-	basket,
-	addressPayment,
-	contacts,
-	success,
-	none,
 }
 
 export interface AppState {
 	products: Product[];
 	selectedProduct: Product;
 	basket: Product[];
-	openedModal: AppStateModals | null;
 	selectedPayment: PaymentType;
 	address: string;
 	contacts: Contacts;
 	basketTotal: number;
 	storageKey: string;
 
-	selectProduct(id: string): void;
-
-	loadProducts(): void;
+	selectProduct(product: Product): void;
 
 	addToBasket(id: string): void;
 
@@ -53,8 +43,6 @@ export interface AppState {
 	removeFromBasket(id: string): void;
 
 	getOrder(): Order;
-
-	orderProducts(): void;
 
 	setContacts(contacts: Contacts): void;
 
@@ -80,16 +68,12 @@ export class AppStateModel implements AppState {
 	products: Product[] = [];
 	selectedProduct: Product;
 	basket: Product[] = [];
-	openedModal: AppStateModals;
 	selectedPayment: PaymentType;
 	address: string;
 	contacts: Contacts;
 	basketTotal: number;
 
-	async loadProducts() {
-		this.products = await this.api.getProducts();
-		this.events.emit(AppStateChanges['products:changed']);
-	}
+
 
 	protected updateTotal() {
 		this.basketTotal = this.basket.reduce(
@@ -98,6 +82,10 @@ export class AppStateModel implements AppState {
 		);
 	}
 
+	set _products(products: Product[]) {
+		this.products = products;
+		this.events.emit(AppStateChanges['products:changed']);
+	}
 
 	addToBasket(): void {
 		if (this.basket.some((x) => x.id === this.selectedProduct.id)) {
@@ -106,33 +94,23 @@ export class AppStateModel implements AppState {
 		this.basket.push(this.selectedProduct);
 		localStorage.setItem(this.storageKey, JSON.stringify(this.basket));
 		this.updateTotal();
+		this.events.emit(AppStateChanges['basket:change'])
 	}
 
 	clearBasket(): void {
 		localStorage.removeItem(this.storageKey);
 		this.basket = [];
 		this.updateTotal();
+		this.events.emit(AppStateChanges['basket:change'])
 	}
 
 	removeFromBasket(id: string): void {
 		this.basket = this.basket.filter((x) => x.id !== id);
 		localStorage.setItem(this.storageKey, JSON.stringify(this.basket));
 		this.updateTotal();
+		this.events.emit(AppStateChanges['basket:change'])
 	}
 
-	async orderProducts() {
-		if (
-			!this.contacts ||
-			this.basket.length === 0 ||
-			!this.address ||
-			!this.selectedPayment
-		) {
-			throw new Error('Order is empty');
-		}
-		const order = this.getOrder();
-		return await this.api.orderProducts(order);
-
-	}
 
 	getOrder(): Order {
 		return {
@@ -155,10 +133,8 @@ export class AppStateModel implements AppState {
 		this.selectedPayment = payment
 	}
 
-	async selectProduct(id: string) {
-		return await this.api.getProductById(id).then((res) => {
-			if (res) this.selectedProduct = res;
-		});
+	selectProduct(product: Product) {
+		this.selectedProduct = product
 	}
 
 	validateData(contacts: Contacts): FormErrors {

@@ -1,5 +1,5 @@
 import { IEvents } from '../base/events';
-import { cloneTemplate } from '../../utils/utils';
+import { cloneTemplate, ensureElement } from '../../utils/utils';
 import { settings } from '../../utils/constants';
 import { AppStateChanges } from '../model/AppStateModel';
 
@@ -14,8 +14,8 @@ export class SuccessView implements ISuccess {
 
 	constructor(template: HTMLTemplateElement, events: IEvents) {
 		this.successContent = cloneTemplate(template)
-		this.closeButton = this.successContent.querySelector(settings.successSettings.closeButton);
-		this.totalElement = this.successContent.querySelector(settings.successSettings.total);
+		this.closeButton = ensureElement(settings.successSettings.closeButton, this.successContent) as HTMLButtonElement;
+		this.totalElement = ensureElement(settings.successSettings.total, this.successContent);
 
 		this.closeButton.addEventListener('click', () => {
 			events.emit(AppStateChanges['success:close'], {})

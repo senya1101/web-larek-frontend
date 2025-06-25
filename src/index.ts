@@ -14,7 +14,7 @@ import { SuccessView } from './components/view/Success';
 import { CardView } from './components/view/Card';
 import { Contacts, FormErrors, PaymentType, Product } from './types';
 import { BasketItemView } from './components/view/BasketItem';
-import {ensureElement} from './utils/utils'
+import { ensureElement } from './utils/utils';
 
 const storageKey = 'basket';
 const api = new ProductsApi(API_URL, CDN_URL);
@@ -72,22 +72,19 @@ events.on(AppStateChanges['products:changed'], () => {
 	});
 });
 
-events.on(
-	AppStateChanges['product:selected'],
-	(data: { product: Product }) => {
-		appState.selectProduct(data.product);
-		const inBasket = appState.basket.some((x) => x.id === data.product.id);
-		const cardPreview = new CardView({
-			template: cardPreviewTemplate,
-			data: appState.selectedProduct,
-			inBasket: inBasket,
-			isPreview: true,
-			events: events,
-		});
-		modalView.content = cardPreview.render();
-		modalView.open();
-	}
-);
+events.on(AppStateChanges['product:selected'], (data: { product: Product }) => {
+	appState.selectProduct(data.product);
+	const inBasket = appState.basket.some((x) => x.id === data.product.id);
+	const cardPreview = new CardView({
+		template: cardPreviewTemplate,
+		data: appState.selectedProduct,
+		inBasket: inBasket,
+		isPreview: true,
+		events: events,
+	});
+	modalView.content = cardPreview.render();
+	modalView.open();
+});
 
 events.on(AppStateChanges['product:addedToBasket'], () => {
 	appState.addToBasket();
@@ -97,12 +94,6 @@ events.on(AppStateChanges['product:addedToBasket'], () => {
 });
 
 events.on(AppStateChanges['basket:open'], () => {
-	basketView.updateContent(
-		appState.basket,
-		events,
-		basketItemTemplate,
-		appState.basketTotal
-	);
 	modalView.content = basketView.render();
 	modalView.open();
 });
@@ -123,45 +114,47 @@ events.on(AppStateChanges['contacts:changed'], (data: Contacts) => {
 	const validationData = appState.validateData(data);
 	contactsView.isValid = validationData.email && validationData.phone;
 	contactsView.messageError = Object.keys(validationData)
-		.filter((x: keyof FormErrors) =>!validationData[x])
+		.filter((x: keyof FormErrors) => !validationData[x])
 		.map((x: keyof FormErrors) => `Неверное значение в поле "${x}"`)
 		.join('. ');
 });
 
-
-events.on(AppStateChanges['addressPayment:open'], ()=>{
+events.on(AppStateChanges['addressPayment:open'], () => {
 	modalView.content = orderView.render();
-})
+});
 
-events.on(AppStateChanges['addressPayment:changed'], (data:{
-	address: string;
-	payment: PaymentType;
-})=>{
-	appState.setPaymentAddress(data.address, data.payment);
-	orderView.isValid = !!data.address
-	if(!data.address)orderView.errorMessage = 'Поле адреса не заполнено'
-	else orderView.errorMessage=''
-})
+events.on(
+	AppStateChanges['addressPayment:changed'],
+	(data: { address: string; payment: PaymentType }) => {
+		appState.setPaymentAddress(data.address, data.payment);
+		orderView.isValid = !!data.address;
+		if (!data.address) orderView.errorMessage = 'Поле адреса не заполнено';
+		else orderView.errorMessage = '';
+	}
+);
 
+events.on(AppStateChanges['order:send'], () => {
+	api
+		.orderProducts(appState.getOrder())
+		.then(() => {
+			events.emit(AppStateChanges['success:open'], {
+				total: appState.basketTotal,
+			});
+			appState.clearBasket();
+		})
+		.catch((e) => console.error(e));
+});
 
-events.on(AppStateChanges['order:send'], ()=>{
-	api.orderProducts(appState.getOrder()).catch(e=>console.error(e)).then(()=>{
-		events.emit(AppStateChanges['success:open'], {total:appState.basketTotal});
-		appState.clearBasket()
-	});
-})
-
-
-events.on(AppStateChanges['success:open'], (data:{total:number})=>{
-	successView.total = data.total
+events.on(AppStateChanges['success:open'], (data: { total: number }) => {
+	successView.total = data.total;
 	modalView.content = successView.render();
-})
+});
 
-events.on(AppStateChanges['success:close'], ()=>{
-	modalView.close()
-})
+events.on(AppStateChanges['success:close'], () => {
+	modalView.close();
+});
 
-events.on(AppStateChanges['basket:change'], ()=>{
+events.on(AppStateChanges['basket:change'], () => {
 	if (appState.basket.length !== 0) {
 		basketView.content = appState.basket.map((product, i) => {
 			const item = new BasketItemView(
@@ -172,15 +165,15 @@ events.on(AppStateChanges['basket:change'], ()=>{
 			);
 			return item.render();
 		});
-		basketView.isDisabled=false
+		basketView.isDisabled = false;
 	} else {
-		basketView.content = []
-		basketView.isDisabled  = true
+		basketView.content = [];
+		basketView.isDisabled = true;
 	}
 	basketView.count = appState.basket.length;
-	basketView.total = appState.basketTotal
-})
+	basketView.total = appState.basketTotal;
+});
 
-api.getProducts().catch(e=>console.error(e)).then((data: Product[])=>{
-	appState._products = data
-})
+api.getProducts().then((data: Product[]) => {appState._products = data;})
+	.catch((e) => console.error(e));
+appState.getBasketFromLocalStorage()

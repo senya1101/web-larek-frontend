@@ -8,25 +8,25 @@ interface IContact {
 }
 
 export class ContactsView implements IContact {
-	protected ContactsForm: HTMLFormElement;
-	protected PhoneInput: HTMLInputElement;
-	protected EmailInput: HTMLInputElement;
+	protected contactsForm: HTMLFormElement;
+	protected phoneInput: HTMLInputElement;
+	protected emailInput: HTMLInputElement;
 	protected nextButton: HTMLButtonElement;
 	protected errorMessage: HTMLElement;
 
 	constructor(template: HTMLTemplateElement, events: IEvents) {
-		this.ContactsForm = cloneTemplate(template);
-		this.PhoneInput = ensureElement(settings.contactsSettings.phone, this.ContactsForm) as HTMLInputElement;
-		this.EmailInput = ensureElement(settings.contactsSettings.email, this.ContactsForm)as HTMLInputElement;
-		this.nextButton = ensureElement(settings.formSettings.submitButton, this.ContactsForm) as HTMLButtonElement;
-		this.errorMessage = ensureElement(settings.formSettings.formError, this.ContactsForm);
-		[this.EmailInput, this.PhoneInput].forEach(cur => cur.addEventListener('change', () => {
+		this.contactsForm = cloneTemplate(template);
+		this.phoneInput = ensureElement(settings.contactsSettings.phone, this.contactsForm) as HTMLInputElement;
+		this.emailInput = ensureElement(settings.contactsSettings.email, this.contactsForm)as HTMLInputElement;
+		this.nextButton = ensureElement(settings.formSettings.submitButton, this.contactsForm) as HTMLButtonElement;
+		this.errorMessage = ensureElement(settings.formSettings.formError, this.contactsForm);
+		[this.emailInput, this.phoneInput].forEach(cur => cur.addEventListener('change', () => {
 			events.emit(AppStateChanges['contacts:changed'], {
-				email: this.EmailInput.value,
-				phone: this.PhoneInput.value,
+				email: this.emailInput.value,
+				phone: this.phoneInput.value,
 			});
 		}));
-		this.ContactsForm.addEventListener('submit', (e)=>{
+		this.contactsForm.addEventListener('submit', (e)=>{
 			e.preventDefault();
 			events.emit(AppStateChanges['order:send'], {})
 		})
@@ -41,7 +41,7 @@ export class ContactsView implements IContact {
 	}
 
 	render(): HTMLElement {
-		return this.ContactsForm
+		return this.contactsForm
 	}
 }
 

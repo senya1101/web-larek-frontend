@@ -57,9 +57,7 @@ export class AppStateModel implements AppState {
 		protected events: IEvents,
 		public storageKey: string
 	) {
-		this.basket = JSON.parse(localStorage.getItem(storageKey)) as Product[] || []
-		this.updateTotal()
-		this.contacts = {
+			this.contacts = {
 			email:'',
 			phone:'',
 		}
@@ -73,7 +71,11 @@ export class AppStateModel implements AppState {
 	contacts: Contacts;
 	basketTotal: number;
 
-
+	getBasketFromLocalStorage(){
+		this.basket = JSON.parse(localStorage.getItem(this.storageKey)) as Product[] || []
+		this.updateTotal()
+		this.events.emit(AppStateChanges['basket:change']);
+	}
 
 	protected updateTotal() {
 		this.basketTotal = this.basket.reduce(

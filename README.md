@@ -264,7 +264,6 @@ export interface AppState {
 - Счетчик товаров в шапке (`basketHeaderCount`)
 
 #### Ключевые методы:
-- `updateContent()` - обновляет список товаров и сумму
 - `render()` - возвращает DOM-элемент корзины
 
 #### Функционал:

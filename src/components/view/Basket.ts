@@ -2,12 +2,10 @@ import { cloneTemplate, ensureElement } from '../../utils/utils';
 import { settings } from '../../utils/constants';
 import { IEvents } from '../base/events';
 import { AppStateChanges } from '../model/AppStateModel';
-import { Product } from '../../types';
-import { BasketItemView } from './BasketItem';
+
 
 
 interface IBasket {
-	updateContent(products: Product[], events:IEvents, basketItemTemplate:HTMLTemplateElement, total: number):void,
 	render(): HTMLElement;
 }
 
@@ -48,27 +46,6 @@ export class BasketView implements IBasket {
 	set content(content: HTMLElement[]) {
 		this.basketList.replaceChildren(...content)
 	}
-
-	updateContent(products: Product[], events:IEvents, basketItemTemplate:HTMLTemplateElement, total: number) {
-		if (products.length !== 0) {
-			this.content = products.map((product, i) => {
-				const item = new BasketItemView(
-					basketItemTemplate,
-					events,
-					product,
-					i + 1
-				);
-				return item.render();
-			});
-			this.isDisabled=false
-		} else {
-			this.content = []
-			this.isDisabled  = true
-		}
-		this.count = products.length;
-		this.total = total
-	}
-
 
 
 	set total(total: number) {
